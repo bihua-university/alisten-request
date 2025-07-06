@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>点歌插件设置</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <div class="header">
+            <h1 class="title">点歌插件设置</h1>
+        </div>
+        
+        <div class="content">
+            <form id="configForm">
+                <div class="form-group">
+                    <label for="endPoint">服务器地址</label>
+                    <input type="text" id="endPoint" placeholder="例如: example.com:8080" required>
+                    <div class="help-text">包含域名和端口号</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="houseId">房间号</label>
+                    <input type="text" id="houseId" placeholder="输入房间号" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="housePwd">房间密码</label>
+                    <input type="password" id="housePwd" placeholder="房间密码（可选）">
+                    <div class="help-text">可留空</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="nickName">用户昵称</label>
+                    <input type="text" id="nickName" placeholder="输入您的昵称" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">保存配置</button>
+                    <button type="button" class="btn btn-secondary" id="testBtn">测试连接</button>
+                </div>
+            </form>
+            
+            <div class="status-section">
+                <div class="status-item">
+                    <span class="status-label">连接状态:</span>
+                    <span id="connectionStatus" class="status-value">未连接</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">最后点歌:</span>
+                    <span id="lastSongTime" class="status-value">无</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="version">v1.0.0</div>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

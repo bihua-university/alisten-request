@@ -1,0 +1,104 @@
+/* 点歌按钮样式 */
+.song-request-btn {
+  position: relative;
+  display: inline-block;
+  padding: 6px 12px;
+  margin: 4px;
+  background: linear-gradient(135deg, #00d4ff, #0099cc);
+  color: white;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+  z-index: 1000;
+}
+
+.song-request-btn:hover {
+  background: linear-gradient(135deg, #0099cc, #0066aa);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+}
+
+.song-request-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 212, 255, 0.2);
+}
+
+.song-request-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.song-request-btn.success {
+  background: linear-gradient(135deg, #00ff88, #00cc66);
+}
+
+.song-request-btn.success:hover {
+  background: linear-gradient(135deg, #00cc66, #00aa55);
+}
+
+.song-request-btn.error {
+  background: linear-gradient(135deg, #ff4444, #cc3333);
+}
+
+.song-request-btn.error:hover {
+  background: linear-gradient(135deg, #cc3333, #aa2222);
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .song-request-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    margin: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .song-request-btn {
+    padding: 3px 6px;
+    font-size: 10px;
+    margin: 1px;
+  }
+}
+
+/* 确保按钮在视频卡片中的位置 */
+.bili-video-card__info--right {
+  position: relative;
+}
+
+.bili-video-card__info--right .song-request-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
+}
+
+/* 深色主题适配 */
+@media (prefers-color-scheme: dark) {
+  .song-request-btn {
+    background: linear-gradient(135deg, #0088cc, #0066aa);
+    color: #ffffff;
+  }
+  
+  .song-request-btn:hover {
+    background: linear-gradient(135deg, #0066aa, #004488);
+  }
+}
+
+/* 高对比度模式适配 */
+@media (prefers-contrast: high) {
+  .song-request-btn {
+    background: #0066cc;
+    border: 1px solid #ffffff;
+  }
+  
+  .song-request-btn:hover {
+    background: #0044aa;
+  }
+}
