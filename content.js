@@ -83,8 +83,9 @@ function extractBvId(card) {
 function createSongButton(bvId) {
   const button = document.createElement('button');
   button.className = 'song-request-btn';
-  button.textContent = '点歌';
+  button.textContent = '🎶';
   button.setAttribute('data-bv-id', bvId);
+  button.setAttribute('title', '点歌');
   
   button.addEventListener('click', async (e) => {
     e.preventDefault();
@@ -93,7 +94,7 @@ function createSongButton(bvId) {
     // 发送点歌请求到background script
     try {
       button.disabled = true;
-      button.textContent = '发送中...';
+      button.textContent = '⏳';
       
       const response = await chrome.runtime.sendMessage({
         action: 'requestSong',
@@ -101,10 +102,10 @@ function createSongButton(bvId) {
       });
       
       if (response.success) {
-        button.textContent = '已点歌';
+        button.textContent = '✅';
         button.classList.add('success');
         setTimeout(() => {
-          button.textContent = '点歌';
+          button.textContent = '🎶';
           button.classList.remove('success');
           button.disabled = false;
         }, 2000);
@@ -113,10 +114,10 @@ function createSongButton(bvId) {
       }
     } catch (error) {
       console.error('点歌请求失败:', error);
-      button.textContent = '失败';
+      button.textContent = '❌';
       button.classList.add('error');
       setTimeout(() => {
-        button.textContent = '点歌';
+        button.textContent = '🎶';
         button.classList.remove('error');
         button.disabled = false;
       }, 2000);
@@ -128,19 +129,7 @@ function createSongButton(bvId) {
 
 // 找到插入按钮的位置
 function findInsertPosition(card) {
-  // 尝试找到视频信息区域
-  const infoRight = card.querySelector('.bili-video-card__info--right');
-  if (infoRight) {
-    return infoRight;
-  }
-  
-  // 备选位置：卡片底部
-  const cardWrap = card.querySelector('.bili-video-card__wrap');
-  if (cardWrap) {
-    return cardWrap;
-  }
-  
-  // 最后备选：卡片本身
+  // 直接插入到卡片本身，使用绝对定位
   return card;
 }
 
