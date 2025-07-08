@@ -3,7 +3,6 @@ const form = document.getElementById('configForm');
 const endPointInput = document.getElementById('endPoint');
 const houseIdInput = document.getElementById('houseId');
 const housePwdInput = document.getElementById('housePwd');
-const nickNameInput = document.getElementById('nickName');
 const testBtn = document.getElementById('testBtn');
 const connectionStatus = document.getElementById('connectionStatus');
 const lastSongTime = document.getElementById('lastSongTime');
@@ -19,12 +18,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 // 加载保存的配置
 async function loadConfig() {
   try {
-    const config = await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd', 'nickName']);
+    const config = await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd']);
     
     if (config.endPoint) endPointInput.value = config.endPoint;
     if (config.houseId) houseIdInput.value = config.houseId;
     if (config.housePwd) housePwdInput.value = config.housePwd;
-    if (config.nickName) nickNameInput.value = config.nickName;
   } catch (error) {
     console.error('加载配置失败:', error);
     showToast('加载配置失败', 'error');
@@ -37,12 +35,11 @@ async function saveConfig() {
     const config = {
       endPoint: endPointInput.value.trim(),
       houseId: houseIdInput.value.trim(),
-      housePwd: housePwdInput.value.trim(),
-      nickName: nickNameInput.value.trim()
+      housePwd: housePwdInput.value.trim()
     };
     
     // 验证必填字段
-    if (!config.endPoint || !config.houseId || !config.nickName) {
+    if (!config.endPoint || !config.houseId) {
       showToast('请填写所有必填字段', 'error');
       return false;
     }
@@ -79,45 +76,54 @@ async function testConnection() {
     const config = {
       endPoint: endPointInput.value.trim(),
       houseId: houseIdInput.value.trim(),
-      housePwd: housePwdInput.value.trim(),
-      nickName: nickNameInput.value.trim()
+      housePwd: housePwdInput.value.trim()
     };
     
-    if (!config.endPoint || !config.houseId || !config.nickName) {
+    if (!config.endPoint || !config.houseId) {
       showToast('请先填写完整配置', 'warning');
       return;
     }
     
-    // 构建WebSocket URL
-    const wsUrl = `wss://${config.endPoint}/server?houseId=${config.houseId}&housePwd=${config.housePwd}`;
-    
-    // 创建临时WebSocket连接进行测试
-    const testWs = new WebSocket(wsUrl);
-    
-    const testPromise = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        testWs.close();
-        reject(new Error('连接超时'));
-      }, 10000);
-      
-      testWs.onopen = () => {
-        clearTimeout(timeout);
-        testWs.close();
-        resolve();
-      };
-      
-      testWs.onerror = (error) => {
-        clearTimeout(timeout);
-        reject(error);
-      };
+
+    // FIXME: 没法用 music/pick 接口来测试，得想其他方法
+    // 测试 HTTP POST 请求连接
+    const response = await fetch(`https://${config.endPoint}/music/pick`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        houseId: config.houseId,
+        password: config.housePwd || '',
+        name: 'TEST_CONNECTION',
+        source: 'db'
+      })
     });
     
-    await testPromise;
-    showToast('连接测试成功', 'success');
+    // 无论返回什么，只要能连接就算成功
+    if (response.status === 404 || response.status === 401) {
+      // 房间不存在或密码错误，但连接是通的
+      const errorData = await response.json();
+      if (errorData.error === '房间不存在') {
+        showToast('连接成功，但房间不存在，请检查房间号', 'warning');
+      } else if (errorData.error === '密码错误') {
+        showToast('连接成功，但房间密码错误', 'warning');
+      } else {
+        showToast('服务器连接正常', 'success');
+      }
+    } else if (response.ok) {
+      showToast('连接测试成功', 'success');
+    } else {
+      throw new Error(`HTTP ${response.status}`);
+    }
     
   } catch (error) {
     console.error('连接测试失败:', error);
-    showToast('连接测试失败: ' + error.message, 'error');
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      showToast('无法连接到服务器，请检查服务器地址', 'error');
+    } else {
+      showToast('连接测试失败: ' + error.message, 'error');
+    }
   } finally {
     testBtn.disabled = false;
     testBtn.textContent = '测试连接';
@@ -128,11 +134,11 @@ async function testConnection() {
 async function updateStatus() {
   try {
     // 获取存储的状态信息
-    const status = await chrome.storage.local.get(['wsConnected', 'lastSongRequestTime']);
+    const status = await chrome.storage.local.get(['lastSongRequestTime']);
     
-    // 更新连接状态
-    connectionStatus.textContent = status.wsConnected ? '已连接' : '未连接';
-    connectionStatus.style.color = status.wsConnected ? '#27ae60' : '#e74c3c';
+    // 显示连接状态为已就绪（因为使用HTTP请求）
+    connectionStatus.textContent = '就绪';
+    connectionStatus.style.color = '#27ae60';
     
     // 更新最后点歌时间
     if (status.lastSongRequestTime) {
