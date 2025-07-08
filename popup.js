@@ -106,13 +106,17 @@ async function testConnection() {
       const errorData = await response.json();
       if (errorData.error === '房间不存在') {
         showToast('连接成功，但房间不存在，请检查房间号', 'warning');
+        await chrome.storage.local.set({ connectionStatus: 'warning', connectionMessage: '房间不存在' });
       } else if (errorData.error === '密码错误') {
         showToast('连接成功，但房间密码错误', 'warning');
+        await chrome.storage.local.set({ connectionStatus: 'warning', connectionMessage: '密码错误' });
       } else {
         showToast('服务器连接正常', 'success');
+        await chrome.storage.local.set({ connectionStatus: 'success', connectionMessage: '连接正常' });
       }
     } else if (response.ok) {
       showToast('连接测试成功', 'success');
+      await chrome.storage.local.set({ connectionStatus: 'success', connectionMessage: '连接成功' });
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -121,8 +125,10 @@ async function testConnection() {
     console.error('连接测试失败:', error);
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       showToast('无法连接到服务器，请检查服务器地址', 'error');
+      await chrome.storage.local.set({ connectionStatus: 'error', connectionMessage: '无法连接到服务器' });
     } else {
       showToast('连接测试失败: ' + error.message, 'error');
+      await chrome.storage.local.set({ connectionStatus: 'error', connectionMessage: '连接失败' });
     }
   } finally {
     testBtn.disabled = false;
@@ -134,11 +140,32 @@ async function testConnection() {
 async function updateStatus() {
   try {
     // 获取存储的状态信息
-    const status = await chrome.storage.local.get(['lastSongRequestTime']);
+    const status = await chrome.storage.local.get(['lastSongRequestTime', 'connectionStatus', 'connectionMessage']);
     
-    // 显示连接状态为已就绪（因为使用HTTP请求）
-    connectionStatus.textContent = '就绪';
-    connectionStatus.style.color = '#27ae60';
+    // 显示连接状态
+    if (status.connectionStatus) {
+      switch (status.connectionStatus) {
+        case 'success':
+          connectionStatus.textContent = status.connectionMessage || '连接正常';
+          connectionStatus.style.color = '#27ae60';
+          break;
+        case 'warning':
+          connectionStatus.textContent = status.connectionMessage || '配置有误';
+          connectionStatus.style.color = '#f39c12';
+          break;
+        case 'error':
+          connectionStatus.textContent = status.connectionMessage || '连接失败';
+          connectionStatus.style.color = '#e74c3c';
+          break;
+        default:
+          connectionStatus.textContent = '未知状态';
+          connectionStatus.style.color = '#95a5a6';
+      }
+    } else {
+      // 如果没有保存的状态，显示未测试
+      connectionStatus.textContent = '未测试';
+      connectionStatus.style.color = '#95a5a6';
+    }
     
     // 更新最后点歌时间
     if (status.lastSongRequestTime) {
