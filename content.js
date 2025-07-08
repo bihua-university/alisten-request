@@ -1,3 +1,34 @@
+// 显示提示消息
+function showToast(message, type = 'info') {
+  // 移除之前的提示
+  const existingToast = document.querySelector('.alisten-toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `alisten-toast alisten-toast-${type}`;
+  toast.textContent = message;
+  
+  // 插入到页面顶部
+  document.body.appendChild(toast);
+  
+  // 动画显示
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+  
+  // 3秒后自动消失
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, 3000);
+}
+
 // 已处理的视频卡片集合
 const processedCards = new Set();
 
@@ -95,6 +126,7 @@ function createSongButton(bvId) {
     try {
       button.disabled = true;
       button.textContent = '⏳';
+      button.classList.remove('success', 'error');
       
       const response = await chrome.runtime.sendMessage({
         action: 'requestSong',
@@ -104,21 +136,33 @@ function createSongButton(bvId) {
       if (response.success) {
         button.textContent = '✅';
         button.classList.add('success');
+        button.setAttribute('title', response.message || '点歌成功！');
+        
+        // 显示成功提示
+        showToast('点歌成功！', 'success');
+        
         setTimeout(() => {
           button.textContent = '🎶';
           button.classList.remove('success');
+          button.setAttribute('title', '点歌');
           button.disabled = false;
         }, 2000);
       } else {
-        throw new Error('发送失败');
+        throw new Error(response.error || '发送失败');
       }
     } catch (error) {
       console.error('点歌请求失败:', error);
       button.textContent = '❌';
       button.classList.add('error');
+      button.setAttribute('title', error.message || '点歌失败');
+      
+      // 显示失败提示
+      showToast(error.message || '点歌失败，请重试', 'error');
+      
       setTimeout(() => {
         button.textContent = '🎶';
         button.classList.remove('error');
+        button.setAttribute('title', '点歌');
         button.disabled = false;
       }, 2000);
     }

@@ -1,8 +1,10 @@
 // 监听来自content script的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'requestSong') {
-    handleSongRequest(request.bvId);
-    sendResponse({success: true});
+    handleSongRequest(request.bvId)
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({success: false, error: error.message}));
+    return true; // 保持消息通道开放用于异步响应
   }
   return true;
 });
@@ -14,8 +16,7 @@ async function handleSongRequest(bvId) {
     const config = await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd']);
     
     if (!config.endPoint || !config.houseId) {
-      console.error('用户配置不完整');
-      return;
+      throw new Error('用户配置不完整，请在插件设置中配置服务器地址和房间ID');
     }
     
     // 发送POST请求进行点歌
@@ -45,12 +46,16 @@ async function handleSongRequest(bvId) {
       chrome.runtime.sendMessage({action: 'statusUpdate'}).catch(() => {
         // 忽略错误，popup可能没有打开
       });
+      
+      return {success: true, message: '点歌成功！', data: result};
     } else {
       const error = await response.json();
       console.error('点歌请求失败:', error);
+      throw new Error(error.message || `服务器错误 (${response.status})`);
     }
     
   } catch (error) {
     console.error('发送点歌请求失败:', error);
+    throw error;
   }
 }

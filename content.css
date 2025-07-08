@@ -1,3 +1,43 @@
+/* Toast 提示样式 */
+.alisten-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 10000;
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.alisten-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.alisten-toast-success {
+  background: rgba(0, 200, 83, 0.9);
+  border-color: rgba(0, 255, 136, 0.3);
+}
+
+.alisten-toast-error {
+  background: rgba(255, 68, 68, 0.9);
+  border-color: rgba(255, 136, 136, 0.3);
+}
+
+.alisten-toast-info {
+  background: rgba(0, 123, 255, 0.9);
+  border-color: rgba(136, 206, 255, 0.3);
+}
+
 /* 点歌按钮样式 */
 .song-request-btn {
   position: absolute;
@@ -17,10 +57,14 @@
   justify-content: center;
   user-select: none;
   z-index: 1000;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .song-request-btn:hover {
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .song-request-btn:active {
@@ -35,6 +79,8 @@
 
 .song-request-btn.success {
   background: linear-gradient(135deg, #00ff88, #00cc66);
+  color: white;
+  animation: successPulse 0.5s ease-in-out;
 }
 
 .song-request-btn.success:hover {
@@ -43,10 +89,25 @@
 
 .song-request-btn.error {
   background: linear-gradient(135deg, #ff4444, #cc3333);
+  color: white;
+  animation: errorShake 0.5s ease-in-out;
 }
 
 .song-request-btn.error:hover {
   background: linear-gradient(135deg, #cc3333, #aa2222);
+}
+
+/* 动画效果 */
+@keyframes successPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
 }
 
 /* 响应式适配 */
@@ -82,17 +143,32 @@
 /* 深色主题适配 */
 @media (prefers-color-scheme: dark) {
   .song-request-btn {
+    background: rgba(32, 32, 32, 0.9);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
   
-  .song-request-btn:hover {
+  .alisten-toast {
+    background: rgba(32, 32, 32, 0.95);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 }
 
 /* 高对比度模式适配 */
 @media (prefers-contrast: high) {
-  .song-request-btn {
+  .alisten-toast {
+    background: black;
+    border: 2px solid white;
+    color: white;
   }
   
-  .song-request-btn:hover {
+  .alisten-toast-success {
+    background: #008000;
+    border-color: #00ff00;
+  }
+  
+  .alisten-toast-error {
+    background: #800000;
+    border-color: #ff0000;
   }
 }
