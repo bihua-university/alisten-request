@@ -32,6 +32,71 @@ function showToast(message, type = 'info') {
 // 已处理的卡片集合
 const processedCards = new Set();
 
+// 通用的点歌请求处理函数
+async function handleSongRequest(button, requestData, buttonType = 'default') {
+  try {
+    // 禁用按钮，防止重复点击
+    if (buttonType === 'custom') {
+      button.disabled = true;
+      button.textContent = '⏳';
+      button.classList.remove('success', 'error');
+    } else {
+      button.style.pointerEvents = 'none';
+    }
+    
+    // 发送点歌请求到background script
+    const response = await chrome.runtime.sendMessage({
+      action: 'requestSong',
+      ...requestData
+    });
+    
+    if (response.success) {
+      // 显示成功提示
+      showToast('点歌成功！', 'success');
+      
+      // 更新按钮状态（仅对自定义按钮）
+      if (buttonType === 'custom') {
+        button.textContent = '✅';
+        button.classList.add('success');
+        button.setAttribute('title', response.message || '点歌成功！');
+        
+        setTimeout(() => {
+          button.textContent = '🎶';
+          button.classList.remove('success');
+          button.setAttribute('title', '点歌');
+          button.disabled = false;
+        }, 2000);
+      }
+    } else {
+      throw new Error(response.error || '发送失败');
+    }
+  } catch (error) {
+    console.error('点歌请求失败:', error);
+    
+    // 显示失败提示
+    showToast(error.message || '点歌失败，请重试', 'error');
+    
+    // 更新按钮状态（仅对自定义按钮）
+    if (buttonType === 'custom') {
+      button.textContent = '❌';
+      button.classList.add('error');
+      button.setAttribute('title', error.message || '点歌失败');
+      
+      setTimeout(() => {
+        button.textContent = '🎶';
+        button.classList.remove('error');
+        button.setAttribute('title', '点歌');
+        button.disabled = false;
+      }, 2000);
+    }
+  } finally {
+    // 恢复按钮状态（对所有按钮类型）
+    if (buttonType !== 'custom') {
+      button.style.pointerEvents = 'auto';
+    }
+  }
+}
+
 // 检测当前网站类型
 function getCurrentSiteType() {
   const hostname = window.location.hostname;
@@ -79,15 +144,18 @@ function init() {
     });
   } else if (siteType === 'netease') {
     // 网易云音乐需要等待页面完全加载后再处理
-    if (document.readyState === 'complete') {
-      // 页面已完全加载，延迟处理以确保内容渲染完成
-      setTimeout(() => processSongList(), 500);
-    } else {
-      // 等待页面完全加载
-      window.addEventListener('load', () => {
-        setTimeout(() => processSongList(), 500);
-      });
-    }
+    // 等待页面完全加载
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        // 检查当前URL是否为歌单页面
+        const currentUrl = window.location.href;
+        if (currentUrl.includes('/playlist')) {
+          processSongPlaylist();
+        } else if (currentUrl.includes('/song')) {
+          processSongDetailPage();
+        }
+      }, 500);
+    });
   }
 }
 
@@ -123,32 +191,20 @@ function processVideoCard(card) {
 }
 
 // 处理网易云音乐歌曲列表
-function processSongList(retryCount = 0) {
-  console.log('处理网易云音乐歌曲列表，重试次数:', retryCount);
+function processSongPlaylist() {
   // 检查是否在iframe中，主页面不需要处理，因为歌曲列表在iframe中
   if (window === window.parent) {
     return;
   }
-  
+
+  console.log('处理网易云音乐歌曲列表');
   const songRows = document.querySelectorAll('table.m-table tbody tr');
-  
-  if (songRows.length === 0) {
-    // 最多重试5次，避免无限循环
-    if (retryCount < 5) {
-      console.log('未找到歌曲列表，1秒后重试');
-      setTimeout(() => processSongList(retryCount + 1), 1000);
-    } else {
-      console.log('重试次数已达上限，停止处理歌曲列表');
-    }
-    return;
-  }
-  
   console.log('找到', songRows.length, '首歌曲');
-  songRows.forEach(row => processSongRow(row));
+  songRows.forEach(row => processSongPlaylistRow(row));
 }
 
 // 处理单个歌曲行
-function processSongRow(row) {
+function processSongPlaylistRow(row) {
   // 避免重复处理
   const rowId = getSongRowId(row);
   if (processedCards.has(rowId)) {
@@ -165,6 +221,38 @@ function processSongRow(row) {
   const success = replaceShareButtonWithSongButton(row, songId);
   if (success) {
     processedCards.add(rowId);
+  }
+}
+
+// 处理网易云音乐歌曲详情页面
+function processSongDetailPage() {
+  console.log('处理网易云音乐歌曲详情页面');
+  // 查找分享按钮
+  const shareButton = document.querySelector('#content-operation > a.u-btni.u-btni-share');
+  if (!shareButton) {
+    console.log('未找到分享按钮');
+    return;
+  }
+  
+  // 提取歌曲ID
+  const songId = shareButton.getAttribute('data-res-id');
+  if (!songId) {
+    console.log('未找到歌曲ID');
+    return;
+  }
+  
+  console.log('找到歌曲详情页面，歌曲ID:', songId);
+  
+  // 避免重复处理
+  const detailPageId = `detail-${songId}`;
+  if (processedCards.has(detailPageId)) {
+    return;
+  }
+  
+  // 替换分享按钮为点歌按钮
+  const success = replaceShareButtonWithSongButton(shareButton, songId, true);
+  if (success) {
+    processedCards.add(detailPageId);
   }
 }
 
@@ -213,50 +301,10 @@ function createSongButton(bvId) {
     e.stopPropagation();
     
     // 发送点歌请求到background script
-    try {
-      button.disabled = true;
-      button.textContent = '⏳';
-      button.classList.remove('success', 'error');
-      
-      const response = await chrome.runtime.sendMessage({
-        action: 'requestSong',
-        name: bvId,
-        source: 'db'
-      });
-      
-      if (response.success) {
-        button.textContent = '✅';
-        button.classList.add('success');
-        button.setAttribute('title', response.message || '点歌成功！');
-        
-        // 显示成功提示
-        showToast('点歌成功！', 'success');
-        
-        setTimeout(() => {
-          button.textContent = '🎶';
-          button.classList.remove('success');
-          button.setAttribute('title', '点歌');
-          button.disabled = false;
-        }, 2000);
-      } else {
-        throw new Error(response.error || '发送失败');
-      }
-    } catch (error) {
-      console.error('点歌请求失败:', error);
-      button.textContent = '❌';
-      button.classList.add('error');
-      button.setAttribute('title', error.message || '点歌失败');
-      
-      // 显示失败提示
-      showToast(error.message || '点歌失败，请重试', 'error');
-      
-      setTimeout(() => {
-        button.textContent = '🎶';
-        button.classList.remove('error');
-        button.setAttribute('title', '点歌');
-        button.disabled = false;
-      }, 2000);
-    }
+    await handleSongRequest(button, {
+      name: bvId,
+      source: 'db'
+    }, 'custom');
   });
   
   return button;
@@ -268,25 +316,33 @@ function findInsertPosition(card) {
   return card;
 }
 
-// 替换网易云音乐歌曲行中的分享按钮
-function replaceShareButtonWithSongButton(row, songId) {
-  // 找到分享按钮
-  const shareButton = row.querySelector('.icn-share');
+// 替换网易云音乐分享按钮为点歌按钮（通用函数）
+function replaceShareButtonWithSongButton(elementOrRow, songId, isDirectButton = false) {
+  let shareButton;
+  
+  if (isDirectButton) {
+    // 直接传入分享按钮（详情页面模式）
+    shareButton = elementOrRow;
+  } else {
+    // 从行中查找分享按钮（歌单列表模式）
+    shareButton = elementOrRow.querySelector('.icn-share');
+  }
+  
   if (!shareButton) {
     return false;
   }
   
-  // 直接修改分享按钮，保持原有图标和样式
-  shareButton.textContent = '点歌';
-  shareButton.setAttribute('data-song-id', songId);
-  shareButton.setAttribute('title', '点歌');
-  shareButton.className = 'icn icn-share'; // 保持原有的CSS类名以保留图标
+  // 修改按钮内容和属性
+  const iconElement = shareButton.querySelector('i');
+  if (iconElement) {
+    // 详情页面模式：修改内部i元素
+    iconElement.textContent = '点歌';
+  } else {
+    // 歌单列表模式：直接修改按钮文本
+    shareButton.textContent = '点歌';
+  }
   
-  // 移除原有的分享相关属性
-  shareButton.removeAttribute('data-res-action');
-  shareButton.removeAttribute('data-res-name');
-  shareButton.removeAttribute('data-res-author');
-  shareButton.removeAttribute('data-res-pic');
+  shareButton.setAttribute('title', '点歌');
   
   // 添加点击事件
   shareButton.addEventListener('click', async (e) => {
@@ -294,49 +350,10 @@ function replaceShareButtonWithSongButton(row, songId) {
     e.stopPropagation();
     
     // 发送点歌请求到background script
-    try {
-      shareButton.style.pointerEvents = 'none';
-      shareButton.textContent = '请求中...';
-      
-      const response = await chrome.runtime.sendMessage({
-        action: 'requestSong',
-        id: songId,
-        source: 'wy'
-      });
-      
-      if (response.success) {
-        shareButton.textContent = '成功';
-        shareButton.style.color = '#00cc66';
-        shareButton.setAttribute('title', response.message || '点歌成功！');
-        
-        // 显示成功提示
-        showToast('点歌成功！', 'success');
-        
-        setTimeout(() => {
-          shareButton.textContent = '点歌';
-          shareButton.style.color = '';
-          shareButton.setAttribute('title', '点歌');
-          shareButton.style.pointerEvents = 'auto';
-        }, 2000);
-      } else {
-        throw new Error(response.error || '发送失败');
-      }
-    } catch (error) {
-      console.error('点歌请求失败:', error);
-      shareButton.textContent = '失败';
-      shareButton.style.color = '#ff4444';
-      shareButton.setAttribute('title', error.message || '点歌失败');
-      
-      // 显示失败提示
-      showToast(error.message || '点歌失败，请重试', 'error');
-      
-      setTimeout(() => {
-        shareButton.textContent = '点歌';
-        shareButton.style.color = '';
-        shareButton.setAttribute('title', '点歌');
-        shareButton.style.pointerEvents = 'auto';
-      }, 2000);
-    }
+    await handleSongRequest(shareButton, {
+      id: songId,
+      source: 'wy'
+    });
   });
   
   return true;
