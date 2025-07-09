@@ -85,38 +85,32 @@ async function testConnection() {
     }
     
 
-    // FIXME: 没法用 music/pick 接口来测试，得想其他方法
-    // 测试 HTTP POST 请求连接
-    const response = await fetch(`https://${config.endPoint}/music/pick`, {
+    // 使用 /house/enter 接口来测试连接
+    const response = await fetch(`https://${config.endPoint}/house/enter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        houseId: config.houseId,
-        password: config.housePwd || '',
-        name: 'TEST_CONNECTION',
-        source: 'db'
+        id: config.houseId,
+        password: config.housePwd || ''
       })
     });
     
-    // 无论返回什么，只要能连接就算成功
-    if (response.status === 404 || response.status === 401) {
-      // 房间不存在或密码错误，但连接是通的
-      const errorData = await response.json();
-      if (errorData.error === '房间不存在') {
-        showToast('连接成功，但房间不存在，请检查房间号', 'warning');
-        await chrome.storage.local.set({ connectionStatus: 'warning', connectionMessage: '房间不存在' });
-      } else if (errorData.error === '密码错误') {
-        showToast('连接成功，但房间密码错误', 'warning');
-        await chrome.storage.local.set({ connectionStatus: 'warning', connectionMessage: '密码错误' });
-      } else {
-        showToast('服务器连接正常', 'success');
-        await chrome.storage.local.set({ connectionStatus: 'success', connectionMessage: '连接正常' });
-      }
-    } else if (response.ok) {
+    if (response.ok) {
+      // 连接成功且房间存在
       showToast('连接测试成功', 'success');
       await chrome.storage.local.set({ connectionStatus: 'success', connectionMessage: '连接成功' });
+    } else if (response.status === 404) {
+      // 房间不存在，但连接是通的
+      const errorData = await response.json();
+      showToast('连接成功，但房间不存在，请检查房间号', 'warning');
+      await chrome.storage.local.set({ connectionStatus: 'warning', connectionMessage: '房间不存在' });
+    } else if (response.status === 401) {
+      // 密码错误，但连接是通的
+      const errorData = await response.json();
+      showToast('连接成功，但房间密码错误', 'warning');
+      await chrome.storage.local.set({ connectionStatus: 'warning', connectionMessage: '密码错误' });
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
