@@ -210,6 +210,13 @@ function processSongPlaylistRow(row) {
   if (processedCards.has(rowId)) {
     return;
   }
+
+  // 查找分享按钮
+  shareButton = row.querySelector('.icn-share');
+  if (!shareButton) {
+    console.log('未找到分享按钮，跳过此行');
+    return;
+  }
   
   // 提取歌曲ID
   const songId = extractSongId(row);
@@ -218,7 +225,7 @@ function processSongPlaylistRow(row) {
   }
   
   // 替换分享按钮为点歌按钮
-  const success = replaceShareButtonWithSongButton(row, songId);
+  const success = replaceShareButtonWithSongButton(shareButton, songId);
   if (success) {
     processedCards.add(rowId);
   }
@@ -250,7 +257,7 @@ function processSongDetailPage() {
   }
   
   // 替换分享按钮为点歌按钮
-  const success = replaceShareButtonWithSongButton(shareButton, songId, true);
+  const success = replaceShareButtonWithSongButton(shareButton, songId);
   if (success) {
     processedCards.add(detailPageId);
   }
@@ -317,28 +324,12 @@ function findInsertPosition(card) {
 }
 
 // 替换网易云音乐分享按钮为点歌按钮（通用函数）
-function replaceShareButtonWithSongButton(elementOrRow, songId, isDirectButton = false) {
-  let shareButton;
-  
-  if (isDirectButton) {
-    // 直接传入分享按钮（详情页面模式）
-    shareButton = elementOrRow;
-  } else {
-    // 从行中查找分享按钮（歌单列表模式）
-    shareButton = elementOrRow.querySelector('.icn-share');
-  }
-  
-  if (!shareButton) {
-    return false;
-  }
-  
+function replaceShareButtonWithSongButton(shareButton, songId) {
   // 修改按钮内容和属性
   const iconElement = shareButton.querySelector('i');
   if (iconElement) {
-    // 详情页面模式：修改内部i元素
     iconElement.textContent = '点歌';
   } else {
-    // 歌单列表模式：直接修改按钮文本
     shareButton.textContent = '点歌';
   }
   
