@@ -1,23 +1,28 @@
 {
   "manifest_version": 3,
-  "name": "B站点歌插件",
-  "version": "1.0.0",
-  "description": "在B站视频卡片上添加点歌按钮，发送点歌请求到指定服务器",
+  "name": "多平台点歌插件",
+  "version": "1.1.0",
+  "description": "在B站和网易云音乐页面添加点歌按钮，发送点歌请求到指定服务器",
   "permissions": [
     "storage",
     "activeTab"
   ],
   "host_permissions": [
-    "*://*.bilibili.com/*"
+    "*://*.bilibili.com/*",
+    "*://music.163.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["*://*.bilibili.com/*"],
+      "matches": [
+        "*://*.bilibili.com/*",
+        "*://music.163.com/*"
+      ],
       "js": ["content.js"],
-      "css": ["content.css"]
+      "css": ["content.css"],
+      "all_frames": true
     }
   ],
   "action": {

@@ -10,7 +10,21 @@ const toastMessage = document.getElementById('toastMessage');
 // 页面加载时初始化
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
+  await loadVersion();
 });
+
+// 加载版本信息
+async function loadVersion() {
+  try {
+    const manifest = chrome.runtime.getManifest();
+    const versionElement = document.querySelector('.version');
+    if (versionElement && manifest.version) {
+      versionElement.textContent = `v${manifest.version}`;
+    }
+  } catch (error) {
+    console.error('加载版本信息失败:', error);
+  }
+}
 
 // 加载保存的配置
 async function loadConfig() {
