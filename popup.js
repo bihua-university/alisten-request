@@ -4,15 +4,12 @@ const endPointInput = document.getElementById('endPoint');
 const houseIdInput = document.getElementById('houseId');
 const housePwdInput = document.getElementById('housePwd');
 const testBtn = document.getElementById('testBtn');
-const connectionStatus = document.getElementById('connectionStatus');
-const lastSongTime = document.getElementById('lastSongTime');
 const toast = document.getElementById('toast');
 const toastMessage = document.getElementById('toastMessage');
 
 // 页面加载时初始化
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
-  await updateStatus();
 });
 
 // 加载保存的配置
@@ -100,17 +97,12 @@ async function testConnection() {
     if (response.ok) {
       // 连接成功且房间存在
       showToast('连接测试成功', 'success');
-      await chrome.storage.local.set({ connectionStatus: 'success', connectionMessage: '连接成功' });
     } else if (response.status === 404) {
       // 房间不存在，但连接是通的
-      const errorData = await response.json();
       showToast('连接成功，但房间不存在，请检查房间号', 'warning');
-      await chrome.storage.local.set({ connectionStatus: 'warning', connectionMessage: '房间不存在' });
     } else if (response.status === 401) {
       // 密码错误，但连接是通的
-      const errorData = await response.json();
       showToast('连接成功，但房间密码错误', 'warning');
-      await chrome.storage.local.set({ connectionStatus: 'warning', connectionMessage: '密码错误' });
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -119,73 +111,12 @@ async function testConnection() {
     console.error('连接测试失败:', error);
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       showToast('无法连接到服务器，请检查服务器地址', 'error');
-      await chrome.storage.local.set({ connectionStatus: 'error', connectionMessage: '无法连接到服务器' });
     } else {
       showToast('连接测试失败: ' + error.message, 'error');
-      await chrome.storage.local.set({ connectionStatus: 'error', connectionMessage: '连接失败' });
     }
   } finally {
     testBtn.disabled = false;
     testBtn.textContent = '测试连接';
-  }
-}
-
-// 更新状态显示
-async function updateStatus() {
-  try {
-    // 获取存储的状态信息
-    const status = await chrome.storage.local.get(['lastSongRequestTime', 'connectionStatus', 'connectionMessage']);
-    
-    // 显示连接状态
-    if (status.connectionStatus) {
-      switch (status.connectionStatus) {
-        case 'success':
-          connectionStatus.textContent = status.connectionMessage || '连接正常';
-          connectionStatus.style.color = '#27ae60';
-          break;
-        case 'warning':
-          connectionStatus.textContent = status.connectionMessage || '配置有误';
-          connectionStatus.style.color = '#f39c12';
-          break;
-        case 'error':
-          connectionStatus.textContent = status.connectionMessage || '连接失败';
-          connectionStatus.style.color = '#e74c3c';
-          break;
-        default:
-          connectionStatus.textContent = '未知状态';
-          connectionStatus.style.color = '#95a5a6';
-      }
-    } else {
-      // 如果没有保存的状态，显示未测试
-      connectionStatus.textContent = '未测试';
-      connectionStatus.style.color = '#95a5a6';
-    }
-    
-    // 更新最后点歌时间
-    if (status.lastSongRequestTime) {
-      const lastTime = new Date(status.lastSongRequestTime);
-      lastSongTime.textContent = formatTime(lastTime);
-    } else {
-      lastSongTime.textContent = '无';
-    }
-  } catch (error) {
-    console.error('更新状态失败:', error);
-  }
-}
-
-// 格式化时间显示
-function formatTime(date) {
-  const now = new Date();
-  const diff = now - date;
-  
-  if (diff < 60000) {
-    return '刚刚';
-  } else if (diff < 3600000) {
-    return Math.floor(diff / 60000) + '分钟前';
-  } else if (diff < 86400000) {
-    return Math.floor(diff / 3600000) + '小时前';
-  } else {
-    return date.toLocaleString();
   }
 }
 
@@ -203,20 +134,7 @@ function showToast(message, type = 'info') {
 // 事件监听
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const success = await saveConfig();
-  if (success) {
-    await updateStatus();
-  }
+  await saveConfig();
 });
 
 testBtn.addEventListener('click', testConnection);
-
-// 定期更新状态
-setInterval(updateStatus, 5000);
-
-// 监听来自background的消息
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'statusUpdate') {
-    updateStatus();
-  }
-});

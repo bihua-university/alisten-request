@@ -37,16 +37,6 @@ async function handleSongRequest(bvId) {
       const result = await response.json();
       console.log('点歌请求成功:', result);
       
-      // 更新最后点歌时间
-      await chrome.storage.local.set({
-        lastSongRequestTime: new Date().toISOString()
-      });
-      
-      // 通知popup更新状态
-      chrome.runtime.sendMessage({action: 'statusUpdate'}).catch(() => {
-        // 忽略错误，popup可能没有打开
-      });
-      
       return {success: true, message: '点歌成功！', data: result};
     } else {
       const error = await response.json();
