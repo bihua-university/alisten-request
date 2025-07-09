@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handleSongRequest({id, name, source}) {
   try {
     // 获取用户配置
-    const config = await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd']);
+    const config = await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd', 'userName']);
     
     if (!config.endPoint || !config.houseId) {
       throw new Error('用户配置不完整，请在插件设置中配置服务器地址和房间ID');
@@ -23,6 +23,7 @@ async function handleSongRequest({id, name, source}) {
     let requestBody = {
       houseId: config.houseId,
       password: config.housePwd || '',
+      user: config.userName || '点歌插件',
       id: id || '',
       name: name || '',
       source: source || 'db',

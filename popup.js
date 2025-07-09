@@ -3,6 +3,7 @@ const form = document.getElementById('configForm');
 const endPointInput = document.getElementById('endPoint');
 const houseIdInput = document.getElementById('houseId');
 const housePwdInput = document.getElementById('housePwd');
+const userNameInput = document.getElementById('userName');
 const testBtn = document.getElementById('testBtn');
 const toast = document.getElementById('toast');
 const toastMessage = document.getElementById('toastMessage');
@@ -29,11 +30,12 @@ async function loadVersion() {
 // 加载保存的配置
 async function loadConfig() {
   try {
-    const config = await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd']);
+    const config = await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd', 'userName']);
     
     if (config.endPoint) endPointInput.value = config.endPoint;
     if (config.houseId) houseIdInput.value = config.houseId;
     if (config.housePwd) housePwdInput.value = config.housePwd;
+    if (config.userName) userNameInput.value = config.userName;
   } catch (error) {
     console.error('加载配置失败:', error);
     showToast('加载配置失败', 'error');
@@ -46,7 +48,8 @@ async function saveConfig() {
     const config = {
       endPoint: endPointInput.value.trim(),
       houseId: houseIdInput.value.trim(),
-      housePwd: housePwdInput.value.trim()
+      housePwd: housePwdInput.value.trim(),
+      userName: userNameInput.value.trim()
     };
     
     // 验证必填字段
@@ -87,7 +90,8 @@ async function testConnection() {
     const config = {
       endPoint: endPointInput.value.trim(),
       houseId: houseIdInput.value.trim(),
-      housePwd: housePwdInput.value.trim()
+      housePwd: housePwdInput.value.trim(),
+      userName: userNameInput.value.trim()
     };
     
     if (!config.endPoint || !config.houseId) {
