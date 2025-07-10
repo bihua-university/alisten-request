@@ -29,6 +29,41 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+// 全局配置变量
+let globalConfig = {
+  bilibiliEnabled: true,
+  neteaseMusicEnabled: true
+};
+
+// 加载配置
+async function loadConfig() {
+  try {
+    const config = await chrome.storage.sync.get([
+      'bilibiliEnabled',
+      'neteaseMusicEnabled'
+    ]);
+    
+    globalConfig.bilibiliEnabled = config.bilibiliEnabled !== false;
+    globalConfig.neteaseMusicEnabled = config.neteaseMusicEnabled !== false;
+    
+    console.log('配置加载完成:', globalConfig);
+  } catch (error) {
+    console.error('加载配置失败:', error);
+  }
+}
+
+// 监听配置更新
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'configUpdated') {
+    globalConfig.bilibiliEnabled = request.config.bilibiliEnabled;
+    globalConfig.neteaseMusicEnabled = request.config.neteaseMusicEnabled;
+    console.log('配置已更新:', globalConfig);
+    
+    // 重新初始化页面功能
+    init();
+  }
+});
+
 // 已处理的卡片集合
 const processedCards = new Set();
 
@@ -110,9 +145,21 @@ function getCurrentSiteType() {
 }
 
 // 监听页面加载和动态内容变化
-function init() {
+async function init() {
+  // 先加载配置
+  await loadConfig();
+  
   const siteType = getCurrentSiteType();
   console.log('检测到网站类型:', siteType);
+  
+  // 检查对应网站功能是否启用
+  if (siteType === 'bilibili' && !globalConfig.bilibiliEnabled) {
+    console.log('B站功能已禁用，跳过处理');
+    return;
+  } else if (siteType === 'netease' && !globalConfig.neteaseMusicEnabled) {
+    console.log('网易云音乐功能已禁用，跳过处理');
+    return;
+  }
   
   if (siteType === 'bilibili') {
     // 处理B站视频卡片
@@ -120,6 +167,11 @@ function init() {
     
     // 只为B站设置DOM监听，因为B站内容会动态加载
     const observer = new MutationObserver((mutations) => {
+      // 检查功能是否仍然启用
+      if (!globalConfig.bilibiliEnabled) {
+        return;
+      }
+      
       mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
           mutation.addedNodes.forEach((node) => {
@@ -147,6 +199,11 @@ function init() {
     // 等待页面完全加载
     window.addEventListener('load', () => {
       setTimeout(() => {
+        // 再次检查功能是否启用
+        if (!globalConfig.neteaseMusicEnabled) {
+          return;
+        }
+        
         // 检查当前URL是否为歌单页面
         const currentUrl = window.location.href;
         if (currentUrl.includes('/playlist')) {
@@ -155,6 +212,37 @@ function init() {
           processSongDetailPage();
         }
       }, 500);
+    });
+    
+    // 也监听DOM变化，以处理动态加载的内容
+    const observer = new MutationObserver((mutations) => {
+      // 检查功能是否仍然启用
+      if (!globalConfig.neteaseMusicEnabled) {
+        return;
+      }
+      
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              // 检查新增的节点是否包含歌曲列表
+              if (node.querySelectorAll && node.querySelectorAll('.m-table tbody tr').length > 0) {
+                const currentUrl = window.location.href;
+                if (currentUrl.includes('/playlist')) {
+                  processSongPlaylist();
+                } else if (currentUrl.includes('/song')) {
+                  processSongDetailPage();
+                }
+              }
+            }
+          });
+        }
+      });
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
     });
   }
 }

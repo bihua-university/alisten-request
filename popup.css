@@ -196,7 +196,91 @@ body {
   background: #f39c12;
 }
 
-/* 响应式设计 */
+/* 开关组件样式 */
+.switch-group {
+  margin-top: 10px;
+}
+
+.switch-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  margin-right: 12px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #667eea;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #667eea;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #34495e;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 深色模式下的开关样式 */
+@media (prefers-color-scheme: dark) {
+  .slider {
+    background-color: #4a5568;
+  }
+  
+  .switch-label {
+    color: #ecf0f1;
+  }
+  
+  input:checked + .slider {
+    background-color: #667eea;
+  }
+}
+
 @media (max-width: 400px) {
   .popup-container {
     width: 320px;
@@ -212,52 +296,5 @@ body {
   
   .btn {
     margin-bottom: 8px;
-  }
-}
-
-/* 深色主题支持 */
-@media (prefers-color-scheme: dark) {
-  body {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-  }
-  
-  .popup-container {
-    background: #2c3e50;
-    border-color: #34495e;
-    color: #ecf0f1;
-  }
-  
-  .form-group input {
-    background: #34495e;
-    border-color: #4a5568;
-    color: #ecf0f1;
-  }
-  
-  .form-group input:focus {
-    border-color: #667eea;
-  }
-  
-  .status-section {
-    border-color: #4a5568;
-  }
-  
-  .footer {
-    background: #34495e;
-    border-color: #4a5568;
-  }
-}
-
-/* 高对比度模式 */
-@media (prefers-contrast: high) {
-  .popup-container {
-    border: 2px solid #000000;
-  }
-  
-  .form-group input {
-    border: 2px solid #000000;
-  }
-  
-  .btn {
-    border: 2px solid #000000;
   }
 }

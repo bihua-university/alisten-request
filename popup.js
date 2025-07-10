@@ -4,6 +4,8 @@ const endPointInput = document.getElementById('endPoint');
 const houseIdInput = document.getElementById('houseId');
 const housePwdInput = document.getElementById('housePwd');
 const userNameInput = document.getElementById('userName');
+const bilibiliEnabledSwitch = document.getElementById('bilibiliEnabled');
+const neteaseMusicEnabledSwitch = document.getElementById('neteaseMusicEnabled');
 const testBtn = document.getElementById('testBtn');
 const toast = document.getElementById('toast');
 const toastMessage = document.getElementById('toastMessage');
@@ -30,12 +32,23 @@ async function loadVersion() {
 // 加载保存的配置
 async function loadConfig() {
   try {
-    const config = await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd', 'userName']);
+    const config = await chrome.storage.sync.get([
+      'endPoint', 
+      'houseId', 
+      'housePwd', 
+      'userName',
+      'bilibiliEnabled',
+      'neteaseMusicEnabled'
+    ]);
     
     if (config.endPoint) endPointInput.value = config.endPoint;
     if (config.houseId) houseIdInput.value = config.houseId;
     if (config.housePwd) housePwdInput.value = config.housePwd;
     if (config.userName) userNameInput.value = config.userName;
+    
+    // 加载开关状态，默认为启用
+    bilibiliEnabledSwitch.checked = config.bilibiliEnabled !== false;
+    neteaseMusicEnabledSwitch.checked = config.neteaseMusicEnabled !== false;
   } catch (error) {
     console.error('加载配置失败:', error);
     showToast('加载配置失败', 'error');
@@ -49,7 +62,9 @@ async function saveConfig() {
       endPoint: endPointInput.value.trim(),
       houseId: houseIdInput.value.trim(),
       housePwd: housePwdInput.value.trim(),
-      userName: userNameInput.value.trim()
+      userName: userNameInput.value.trim(),
+      bilibiliEnabled: bilibiliEnabledSwitch.checked,
+      neteaseMusicEnabled: neteaseMusicEnabledSwitch.checked
     };
     
     // 验证必填字段
@@ -65,6 +80,21 @@ async function saveConfig() {
     }
     
     await chrome.storage.sync.set(config);
+    
+    // 通知content script配置已更新
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        chrome.tabs.sendMessage(tab.id, { 
+          action: 'configUpdated',
+          config: config
+        });
+      }
+    } catch (error) {
+      // 如果无法发送消息到content script，忽略错误
+      console.log('无法发送配置更新消息到content script:', error);
+    }
+    
     showToast('配置保存成功', 'success');
     return true;
   } catch (error) {
@@ -156,3 +186,12 @@ form.addEventListener('submit', async (e) => {
 });
 
 testBtn.addEventListener('click', testConnection);
+
+// 监听开关变化，实时保存
+bilibiliEnabledSwitch.addEventListener('change', async () => {
+  await saveConfig();
+});
+
+neteaseMusicEnabledSwitch.addEventListener('change', async () => {
+  await saveConfig();
+});
