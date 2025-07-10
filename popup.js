@@ -1,4 +1,6 @@
-// DOM元素
+// =====================
+// DOM 元素与全局变量
+// =====================
 const form = document.getElementById('configForm');
 const endPointInput = document.getElementById('endPoint');
 const houseIdInput = document.getElementById('houseId');
@@ -10,26 +12,17 @@ const testBtn = document.getElementById('testBtn');
 const toast = document.getElementById('toast');
 const toastMessage = document.getElementById('toastMessage');
 
-// 页面加载时初始化
+// =====================
+// 页面初始化
+// =====================
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
   await loadVersion();
 });
 
-// 加载版本信息
-async function loadVersion() {
-  try {
-    const manifest = chrome.runtime.getManifest();
-    const versionElement = document.querySelector('.version');
-    if (versionElement && manifest.version) {
-      versionElement.textContent = `v${manifest.version}`;
-    }
-  } catch (error) {
-    console.error('加载版本信息失败:', error);
-  }
-}
-
-// 加载保存的配置
+// =====================
+// 配置相关
+// =====================
 async function loadConfig() {
   try {
     const config = await chrome.storage.sync.get([
@@ -55,7 +48,6 @@ async function loadConfig() {
   }
 }
 
-// 保存配置
 async function saveConfig() {
   try {
     const config = {
@@ -104,14 +96,30 @@ async function saveConfig() {
   }
 }
 
-// 验证服务器地址格式
 function isValidEndPoint(endPoint) {
   // 基本格式验证：域名:端口 或 域名
   const pattern = /^[a-zA-Z0-9.-]+(?:\:[0-9]+)?$/;
   return pattern.test(endPoint);
 }
 
-// 测试连接
+// =====================
+// 版本信息
+// =====================
+async function loadVersion() {
+  try {
+    const manifest = chrome.runtime.getManifest();
+    const versionElement = document.querySelector('.version');
+    if (versionElement && manifest.version) {
+      versionElement.textContent = `v${manifest.version}`;
+    }
+  } catch (error) {
+    console.error('加载版本信息失败:', error);
+  }
+}
+
+// =====================
+// 连接测试
+// =====================
 async function testConnection() {
   try {
     testBtn.disabled = true;
@@ -168,7 +176,9 @@ async function testConnection() {
   }
 }
 
-// 显示提示消息
+// =====================
+// UI 相关
+// =====================
 function showToast(message, type = 'info') {
   toastMessage.textContent = message;
   toast.className = `toast ${type}`;
@@ -179,7 +189,9 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+// =====================
 // 事件监听
+// =====================
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   await saveConfig();
@@ -187,7 +199,6 @@ form.addEventListener('submit', async (e) => {
 
 testBtn.addEventListener('click', testConnection);
 
-// 监听开关变化，实时保存
 bilibiliEnabledSwitch.addEventListener('change', async () => {
   await saveConfig();
 });
