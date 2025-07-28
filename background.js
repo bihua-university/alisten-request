@@ -47,7 +47,7 @@ async function handleSongRequest({id, name, source}) {
 function buildSongRequestBody(config, {id, name, source}) {
   return {
     houseId: config.houseId,
-    password: config.housePwd || '',
+    housePwd: config.housePwd || '',
     user: config.userName || '点歌插件',
     id: id || '',
     name: name || '',
