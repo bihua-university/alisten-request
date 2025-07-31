@@ -77,9 +77,14 @@ async function saveConfig() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab) {
+        // 传递标准化后的配置给content script
+        const normalizedConfig = {
+          ...config,
+          endPoint: normalizeEndPoint(config.endPoint)
+        };
         chrome.tabs.sendMessage(tab.id, { 
           action: 'configUpdated',
-          config: config
+          config: normalizedConfig
         });
       }
     } catch (error) {
@@ -97,9 +102,18 @@ async function saveConfig() {
 }
 
 function isValidEndPoint(endPoint) {
-  // 基本格式验证：域名:端口 或 域名
-  const pattern = /^[a-zA-Z0-9.-]+(?:\:[0-9]+)?$/;
-  return pattern.test(endPoint);
+  // 支持 http/https 协议前缀或纯域名:端口格式
+  const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+(?:\:[0-9]+)?$/;
+  const domainPattern = /^[a-zA-Z0-9.-]+(?:\:[0-9]+)?$/;
+  return urlPattern.test(endPoint) || domainPattern.test(endPoint);
+}
+
+function normalizeEndPoint(endPoint) {
+  // 如果没有协议前缀，默认添加 https://
+  if (!endPoint.startsWith('http://') && !endPoint.startsWith('https://')) {
+    return `https://${endPoint}`;
+  }
+  return endPoint;
 }
 
 // =====================
@@ -139,7 +153,8 @@ async function testConnection() {
     
 
     // 使用 /house/enter 接口来测试连接
-    const response = await fetch(`https://${config.endPoint}/house/enter`, {
+    const normalizedEndPoint = normalizeEndPoint(config.endPoint);
+    const response = await fetch(`${normalizedEndPoint}/house/enter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

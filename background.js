@@ -1,4 +1,15 @@
 // =====================
+// 工具函数
+// =====================
+function normalizeEndPoint(endPoint) {
+  // 如果没有协议前缀，默认添加 https://
+  if (!endPoint.startsWith('http://') && !endPoint.startsWith('https://')) {
+    return `https://${endPoint}`;
+  }
+  return endPoint;
+}
+
+// =====================
 // 消息监听与主流程
 // =====================
 // 监听来自content script的消息
@@ -23,7 +34,8 @@ async function handleSongRequest({id, name, source}) {
       throw new Error('用户配置不完整，请在插件设置中配置服务器地址和房间ID');
     }
     let requestBody = buildSongRequestBody(config, {id, name, source});
-    const response = await fetch(`https://${config.endPoint}/music/pick`, {
+    const normalizedEndPoint = normalizeEndPoint(config.endPoint);
+    const response = await fetch(`${normalizedEndPoint}/music/pick`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
