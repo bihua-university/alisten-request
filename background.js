@@ -60,7 +60,10 @@ function buildSongRequestBody(config, {id, name, source}) {
   return {
     houseId: config.houseId,
     housePwd: config.housePwd || '',
-    user: config.userName || '点歌插件',
+    user: {
+      name: config.userName || '点歌插件',
+      email: config.userEmail || ''
+    },
     id: id || '',
     name: name || '',
     source: source || 'db',
@@ -72,5 +75,5 @@ function buildSongRequestBody(config, {id, name, source}) {
 // =====================
 // 获取用户配置
 async function getUserConfig() {
-  return await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd', 'userName']);
+  return await chrome.storage.sync.get(['endPoint', 'houseId', 'housePwd', 'userName', 'userEmail']);
 }

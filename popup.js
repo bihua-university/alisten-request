@@ -6,6 +6,7 @@ const endPointInput = document.getElementById('endPoint');
 const houseIdInput = document.getElementById('houseId');
 const housePwdInput = document.getElementById('housePwd');
 const userNameInput = document.getElementById('userName');
+const userEmailInput = document.getElementById('userEmail');
 const bilibiliEnabledSwitch = document.getElementById('bilibiliEnabled');
 const neteaseMusicEnabledSwitch = document.getElementById('neteaseMusicEnabled');
 const testBtn = document.getElementById('testBtn');
@@ -30,6 +31,7 @@ async function loadConfig() {
       'houseId', 
       'housePwd', 
       'userName',
+      'userEmail',
       'bilibiliEnabled',
       'neteaseMusicEnabled'
     ]);
@@ -38,6 +40,7 @@ async function loadConfig() {
     if (config.houseId) houseIdInput.value = config.houseId;
     if (config.housePwd) housePwdInput.value = config.housePwd;
     if (config.userName) userNameInput.value = config.userName;
+    if (config.userEmail) userEmailInput.value = config.userEmail;
     
     // 加载开关状态，默认为启用
     bilibiliEnabledSwitch.checked = config.bilibiliEnabled !== false;
@@ -55,6 +58,7 @@ async function saveConfig() {
       houseId: houseIdInput.value.trim(),
       housePwd: housePwdInput.value.trim(),
       userName: userNameInput.value.trim(),
+      userEmail: userEmailInput.value.trim(),
       bilibiliEnabled: bilibiliEnabledSwitch.checked,
       neteaseMusicEnabled: neteaseMusicEnabledSwitch.checked
     };
@@ -143,7 +147,8 @@ async function testConnection() {
       endPoint: endPointInput.value.trim(),
       houseId: houseIdInput.value.trim(),
       housePwd: housePwdInput.value.trim(),
-      userName: userNameInput.value.trim()
+      userName: userNameInput.value.trim(),
+      userEmail: userEmailInput.value.trim()
     };
     
     if (!config.endPoint || !config.houseId) {
