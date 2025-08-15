@@ -179,7 +179,14 @@ function processNeteaseMusic() {
 function processSongPlaylist() {
   if (window === window.parent) return;
   console.log("处理网易云音乐歌曲列表");
-  const songRows = document.querySelectorAll("table.m-table tbody tr");
+  let songRows = document.querySelectorAll("table.m-table tbody tr");
+  if (songRows.length === 0) {
+    // 搜索页面
+    // https://music.163.com/#/search/m/?s=mushroom&type=1
+    songRows = document.querySelectorAll(
+      "div#m-search div.srchsongst div.item"
+    );
+  }
   console.log("找到", songRows.length, "首歌曲");
   songRows.forEach((row) => processSongPlaylistRow(row));
 }
