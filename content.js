@@ -52,6 +52,7 @@ async function init() {
     processVideoCards();
     observeBilibiliDOM();
   } else if (siteType === "netease") {
+    processNeteaseMusic();
     observeNeteaseDOM();
   }
 }
@@ -106,12 +107,7 @@ function observeNeteaseDOM() {
   window.addEventListener("load", () => {
     setTimeout(() => {
       if (!globalConfig.neteaseMusicEnabled) return;
-      const currentUrl = window.location.href;
-      if (currentUrl.includes("/song")) {
-        processSongDetailPage();
-      } else {
-        processSongPlaylist();
-      }
+      processNeteaseMusic();
     }, 500);
   });
 }
@@ -171,6 +167,15 @@ function findInsertPosition(card) {
 // =====================
 // 网易云相关处理
 // =====================
+function processNeteaseMusic() {
+  const currentUrl = window.location.href;
+  if (currentUrl.includes("/song")) {
+    processSongDetailPage();
+  } else {
+    processSongPlaylist();
+  }
+}
+
 function processSongPlaylist() {
   if (window === window.parent) return;
   console.log("处理网易云音乐歌曲列表");
